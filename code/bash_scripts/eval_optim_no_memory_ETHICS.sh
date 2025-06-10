@@ -8,9 +8,10 @@
 #SBATCH --mail-type=all # to receive E-Mail notifications
 #SBATCH --mail-user=sanddhya.jayabalan@tu-dresden.de # Set E-Mail address to receive notifications
 
+source ~/venv/bin/activate
 
 for f in $(ls ../../benchmarks/ethics/*); do
     echo "Running benchmark for dataset: $f"
-    name="$(basename "$file" .json)"
-    python ../eval_optimizer.py gpt-4o-2024-08-06 $name 1.0 evaloptimizer_no_memory ../../out
+    name="$(basename "$f" .json)"
+    python3 ../eval_optimizer.py gpt-4o-2024-08-06 $name 1.0 evaloptimizer_no_memory ../../out
 done

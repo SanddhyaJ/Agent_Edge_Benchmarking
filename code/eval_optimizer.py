@@ -144,7 +144,10 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
 
     ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
     df = pd.DataFrame(ds)
-    df_subset = sample_dataset(df, sample_size=percent_sample) 
+    if percent_sample < 1:
+        df_subset = sample_dataset(df, sample_size=percent_sample)
+    else:
+        df_subset = df
     
     results = []
     for idx, row in tqdm(df_subset .iterrows(), total=len(df_subset), desc=f"{experiment_name} - {dataset} ({percent_sample*100:.1f}%)"):
