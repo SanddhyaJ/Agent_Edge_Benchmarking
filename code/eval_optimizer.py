@@ -126,19 +126,20 @@ def sample_dataset(df, sample_size=0.1):
 
 def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sample):
 
-    dataset_path = '/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/benchmarks/v2'
+    dataset_path = '../../benchmarks/'
     dataset_paths = {
-        "mmlu_ethics": "ethics/mmlu_moral_scenarios_test.json",
-        "triage_ethics": "ethics/triage.json",
-        "truthfulqa_ethics": "ethics/TruthfulQA_best.json",
-        "medbullets_metacognition": "metacognition/medbullets_op5.json",   
-        "medcalc_metacognition" : "metacognition/medcalc_filtered.json",
-        "mmlu_metacognition": "metacognition/mmlu_metacognition_test.json",
-        "pubmedqa_metacognition": "metacognition/pubmedqa_labeled.json",
-        "bbq_safety" : "bbq_safety/bbq_subset.json",
-        "casehold_safety" : "casehold_safety/casehold_filtered.json",
-        "mmlupro_safety" : "safety/mmlu_pro_regulatory_test.json",
-        "mmlu_safety" : "safety/mmlu_professional_law_test.json"
+        "mmlu_ethics": "ethics/mmlu_ethics.json",
+        "triage_ethics": "ethics/triage_ethics.json",
+        "truthfulqa_ethics": "ethics/truthfulqa_ethics.json",
+        "metamedqa_metacognition": "metacognition/metamedqa_metacognition.json",
+        "medbullets_metacognition": "metacognition/medbullets_metacognition.json",   
+        "medcalc_metacognition" : "metacognition/medcalc_metacognition.json",
+        "mmlu_metacognition": "metacognition/mmlu_metacognition.json",
+        "pubmedqa_metacognition": "metacognition/pubmedqa_metacognition.json",
+        "bbq_safety" : "bbq_safety/bbq_safety.json",
+        "casehold_safety" : "casehold_safety/casehold_safety.json",
+        "mmlupro_safety" : "safety/mmlupro_safety.json",
+        "mmlu_safety" : "safety/mmlu_safety.json"
     }
 
     ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
