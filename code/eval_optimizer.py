@@ -141,7 +141,7 @@ def sample_dataset(df, sample_size=0.1):
 
 def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sample):
 
-    dataset_path = '../benchmarks'
+    dataset_path = '../../benchmarks'
     dataset_paths = {
         "mmlu_ethics": "ethics/mmlu_ethics.json",
         "triage_ethics": "ethics/triage_ethics.json",

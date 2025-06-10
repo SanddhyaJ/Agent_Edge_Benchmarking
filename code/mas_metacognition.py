@@ -174,7 +174,7 @@ def save_langgraph_run(messages, f):
 
 def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sample):
 
-    dataset_path = '../benchmarks/'
+    dataset_path = '../../benchmarks/'
     dataset_paths = {
         "mmlu_ethics": "ethics/mmlu_ethics.json",
         "triage_ethics": "ethics/triage_ethics.json",
@@ -328,7 +328,7 @@ if __name__ == "__main__":
                                 shared_benchmark_path=shared_benchmark_path, 
                                 percent_sample=percent_sample)
 
-    llm = ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = ChatOpenAI(model=model_name, api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
     # Augment the LLM with tools
     tools = [clinician, medical_researcher, logic_expert, pharmacist_expert]
     tools_by_name = {tool.name: tool for tool in tools}

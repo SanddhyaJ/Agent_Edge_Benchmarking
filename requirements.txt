@@ -1,0 +1,6 @@
+ipython
+langchain-openai
+langgraph
+pandas
+python-dotenv
+scikit-learn
