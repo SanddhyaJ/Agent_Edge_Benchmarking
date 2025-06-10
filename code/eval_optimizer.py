@@ -24,16 +24,17 @@ class State(TypedDict):
     prompt: str
     question: str
     choices: list[str]
-    feedback: str
+    feedback: list[str]
     valid_or_not: str
     log_file: TextIOWrapper
+    num_iters: int
 
 class Feedback(BaseModel):
     grade: Literal["valid", "not valid"] = Field(
         description="Decide if the response chosen is valid for the provided question/choices or not.",
     )
     feedback: str = Field(
-        description="If the response is not valid, provide concise, detailed feedback on how to modify the answer and crucial informaiton to consider when answering the question.",
+        description="If the response is not valid, provide few concise sentences of feedback (single paragraph) on how to modify the answer and crucial informaiton to consider when answering the question.",
     )
 
 def check_response_format(response: str, num_choices: int) -> bool:
@@ -51,7 +52,10 @@ def llm_call_generator(state: State):
     """LLM generates a response"""
     log_file = state.get("log_file")
     if state.get("feedback"):
-        input = f"Consider the following feedback when answering the following question. You do not have to agree with the feedback but you must use it in your reasoning when answering the question:\n\nFEEDBACK:{state['feedback']}\n\nQUESTION:\n\n{state['prompt']}"
+        input = f"Consider these feedback(s) when answering the following question. You do not have to agree with the feedback but you must use it in your reasoning when answering the question:\n\nFEEDBACK: \n"
+        for val in state['feedback']:
+            input += val + '\n'
+        input += f"QUESTION:\n\n{state['prompt']}"
     else:
         input = f"{state['prompt']}"
     msg = llm.invoke(input)
@@ -80,7 +84,7 @@ def llm_call_generator(state: State):
     else:
         response = None
         confidence = None
-    return {"response": response, "confidence" : confidence}
+    return {"response": response, "confidence" : confidence, 'num_iters': state.get("num_iters") + 1}
 
 def llm_call_evaluator(state: State):
     """LLM evaluates the response"""
@@ -92,7 +96,13 @@ def llm_call_evaluator(state: State):
         i += 1
     grading_prompt += f"\nRESPONSE:\n{state['response']}\n\n"
     grading_prompt += "Grade the response as 'valid' or 'not valid' based on whether the response is appropriate for the question and choices provided. "
-    grading_prompt += "If the response is not valid, provide concise, detailed feedback on how to modify the answer and crucial information to consider when answering the question."
+    grading_prompt += "If the response is not valid, provide concise few sentences of feedback (single paragraph) on how to modify the answer and crucial information to consider when answering the question."
+    grading_prompt += "If you have provided any previous feedback (listed below), consider it in your evaluation and do not contradict yourself.\n"
+    prev_feedback = state.get('feedback', [])
+    grading_prompt += "PREVIOUS FEEDBACK:\n"
+    for val in prev_feedback:
+        grading_prompt += f"- {val}\n"
+
     grade = evaluator.invoke(grading_prompt)
 
     log_file = state.get("log_file")
@@ -104,7 +114,7 @@ def llm_call_evaluator(state: State):
     log_file.write(log_string)
     log_file.write(f"******************************\n\n")
 
-    return {"valid_or_not": grade.grade, "feedback": grade.feedback}
+    return {"valid_or_not": grade.grade, "feedback": state.get('feedback') + [grade.feedback]}
 
 
 def route_response(state: State):
@@ -113,7 +123,12 @@ def route_response(state: State):
     if state["valid_or_not"] == "valid":
         return "Accepted"
     elif state["valid_or_not"] == "not valid":
-        return "Rejected + Feedback"
+        if state['num_iters'] < 5:
+            return "Rejected + Feedback"
+        else:
+            state['answer'] = None
+            state['confidence'] = None
+            return "Accepted"
 
 def sample_dataset(df, sample_size=0.1):
     _, sample = train_test_split(
@@ -126,7 +141,7 @@ def sample_dataset(df, sample_size=0.1):
 
 def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sample):
 
-    dataset_path = '../../benchmarks/'
+    dataset_path = '../benchmarks'
     dataset_paths = {
         "mmlu_ethics": "ethics/mmlu_ethics.json",
         "triage_ethics": "ethics/triage_ethics.json",
@@ -179,7 +194,7 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
 
         state = optimizer_workflow.invoke({"question": question, "prompt" : prompt,
                                    "choices": choices, 
-                                   "log_file": f, "id":id}, RunnableConfig(recursion_limit=100))
+                                   "log_file": f, "id":id, "num_iters" : 0, 'feedback' : []}, RunnableConfig(recursion_limit=100))
         answer = state["response"]
         confidence = state["confidence"]
 
