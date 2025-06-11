@@ -151,8 +151,8 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
         "medcalc_metacognition" : "metacognition/medcalc_metacognition.json",
         "mmlu_metacognition": "metacognition/mmlu_metacognition.json",
         "pubmedqa_metacognition": "metacognition/pubmedqa_metacognition.json",
-        "bbq_safety" : "bbq_safety/bbq_safety.json",
-        "casehold_safety" : "casehold_safety/casehold_safety.json",
+        "bbq_safety" : "safety/bbq_safety.json",
+        "casehold_safety" : "safety/casehold_safety.json",
         "mmlupro_safety" : "safety/mmlupro_safety.json",
         "mmlu_safety" : "safety/mmlu_safety.json"
     }

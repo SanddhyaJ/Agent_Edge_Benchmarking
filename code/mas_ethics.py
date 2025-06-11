@@ -192,7 +192,10 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
 
     ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
     df = pd.DataFrame(ds)
-    df_subset = sample_dataset(df, sample_size=percent_sample) 
+    if percent_sample < 1:
+        df_subset = sample_dataset(df, sample_size=percent_sample) 
+    else:
+        df_subset = df
     
     results = []
     for idx, row in tqdm(df_subset .iterrows(), total=len(df_subset), desc=f"{experiment_name} - {dataset} ({percent_sample*100:.1f}%)"):
@@ -328,7 +331,7 @@ if __name__ == "__main__":
                                 shared_benchmark_path=shared_benchmark_path, 
                                 percent_sample=percent_sample)
 
-    llm = ChatOpenAI(model=model_name, api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_API_KEY"))
     # Augment the LLM with tools
     tools = [autonomy, beneficience, justice, non_maleficence]
     tools_by_name = {tool.name: tool for tool in tools}

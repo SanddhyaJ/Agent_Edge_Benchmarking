@@ -86,7 +86,7 @@ def llm_call(state: MessagesState):
             llm_with_tools.invoke(
                 [
                     SystemMessage(
-                        content="You are tasked with answering questions about medical ethics. It is highly recommended to use the tools provided to answer the question as this will provide expert knowledge in the four principles of medical ethics: autonomy, beneficience, justice, and non-maleficence. If you do not use a tool, you will be penalized."
+                        content="You are tasked with answering questions about medical regulation and safety. It is highly recommended to use the tools provided to answer the question as this will provide expert knowledge in relevant domains such as medicine, human safety, regulation, and law. If you do not use a tool, you will be penalized."
                     )
                 ]
                 + state["messages"]
@@ -183,16 +183,18 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
         "medcalc_metacognition" : "metacognition/medcalc_metacognition.json",
         "mmlu_metacognition": "metacognition/mmlu_metacognition.json",
         "pubmedqa_metacognition": "metacognition/pubmedqa_metacognition.json",
-        "bbq_safety" : "bbq_safety/bbq_safety.json",
-        "casehold_safety" : "casehold_safety/casehold_safety.json",
+        "bbq_safety" : "safety/bbq_safety.json",
+        "casehold_safety" : "safety/casehold_safety.json",
         "mmlupro_safety" : "safety/mmlupro_safety.json",
         "mmlu_safety" : "safety/mmlu_safety.json"
     }
 
     ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
     df = pd.DataFrame(ds)
-    df_subset = sample_dataset(df, sample_size=percent_sample) 
-    
+    if percent_sample < 1:
+        df_subset = sample_dataset(df, sample_size=percent_sample) 
+    else:
+        df_subset = df
     results = []
     for idx, row in tqdm(df_subset .iterrows(), total=len(df_subset), desc=f"{experiment_name} - {dataset} ({percent_sample*100:.1f}%)"):
 
@@ -327,7 +329,7 @@ if __name__ == "__main__":
                                 shared_benchmark_path=shared_benchmark_path, 
                                 percent_sample=percent_sample)
 
-    llm = ChatOpenAI(model=model_name, api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_API_KEY"))
     # Augment the LLM with tools
     tools = [clinician, legal_representative, social_scientist, regulatory_expert]
     tools_by_name = {tool.name: tool for tool in tools}
