@@ -2,7 +2,7 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from typing_extensions import TypedDict, Literal
 from langgraph.graph import StateGraph, START, END
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from IPython.display import Image, display
 import pandas as pd
 import re
@@ -33,7 +33,7 @@ def check_response_format(response: str, num_choices: int) -> bool:
 
 # Define tools
 @tool
-def clinician(q : str, choices : list[str]) -> str:
+def clinician(q, choices : list[str]) -> str:
     """Justice Medical Ethics Tool
 
     Args:
@@ -45,7 +45,7 @@ def clinician(q : str, choices : list[str]) -> str:
 
 
 @tool
-def legal_representative(q : str, choices : list[str]) -> str:
+def legal_representative(q, choices : list[str]) -> str:
     """Beneficience Medical Ethics Tool
 
     Args:
@@ -56,7 +56,7 @@ def legal_representative(q : str, choices : list[str]) -> str:
     return msg.content
 
 @tool
-def social_scientist(q : str, choices : list[str]) -> str:
+def social_scientist(q, choices : list[str]) -> str:
     """Autonomy Medical Ethics Tool
 
     Args:
@@ -67,7 +67,7 @@ def social_scientist(q : str, choices : list[str]) -> str:
     return msg.content
 
 @tool
-def regulatory_expert(q : str, choices : list[str]) -> str:
+def regulatory_expert(q, choices : list[str]) -> str:
     """Autonomy Medical Ethics Tool
 
     Args:
@@ -99,8 +99,11 @@ def tool_node(state: dict):
     result = []
     for tool_call in state["messages"][-1].tool_calls:
         tool = tools_by_name[tool_call["name"]]
-        observation = tool.invoke(tool_call["args"])
-        result.append(ToolMessage(content=observation, tool_call_id=tool_call["id"]))
+        try:
+            observation = tool.invoke(tool_call["args"])
+            result.append(ToolMessage(content=observation, tool_call_id=tool_call["id"]))
+        except ValidationError:
+            result.append(ToolMessage(content="Apologies, but I am unable to provide any observation. ", tool_call_id=tool_call["id"]))
     return {"messages": result}
 
 # Conditional edge function to route to the tool node or end based upon whether the LLM made a tool call

@@ -1,2 +1,10 @@
 .env
 code/bash_scripts/slurm*.out
+bin/
+include/
+lib/
+lib64/
+share/
+pyvenv.cfg
+out/
+lib64
