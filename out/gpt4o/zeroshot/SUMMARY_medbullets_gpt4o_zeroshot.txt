@@ -1,0 +1,8 @@
+Total questions: 307
+Correct: 204
+Overall Accuracy: 66.45%
+
+Accuracy by confidence level:
+  3: 0.00%
+  4: 37.93%
+  5: 69.68%
