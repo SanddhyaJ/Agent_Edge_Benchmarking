@@ -4,3 +4,5 @@ langgraph
 pandas
 python-dotenv
 scikit-learn
+ipykernel
+jupyter
