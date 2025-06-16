@@ -1,9 +1,0 @@
-Total questions: 1000
-Correct: 677
-Overall Accuracy: 67.70%
-
-Accuracy by confidence level:
-  2: 0.00%
-  3: 38.36%
-  4: 58.22%
-  5: 84.52%
