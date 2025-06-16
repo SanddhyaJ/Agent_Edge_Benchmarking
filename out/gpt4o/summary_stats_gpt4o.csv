@@ -1,34 +1,35 @@
-benchmark_name,workflow,model,num_questions,num_correct,accuracy,conf_1_accuracy,conf_2_accuracy,conf_3_accuracy,conf_4_accuracy,conf_5_accuracy
-bbq_subset_gpt4o_zeroshot,zeroshot,gpt4o,992,862,86.9,89.51,86.11,87.23,75.0,91.2
-mmlu_metacognition_test_gpt4o_zeroshot,zeroshot,gpt4o,392,336,85.71,,,100.0,52.94,87.17
-mmlu_pro_regulatory_test_gpt4o_zeroshot,zeroshot,gpt4o,1101,558,50.68,,,0.0,44.3,55.87
-TruthfulQA_best_gpt4o_zeroshot,zeroshot,gpt4o,784,282,35.97,100.0,0.0,5.26,33.73,37.61
-pubmedqa_labeled_gpt4o_zeroshot,zeroshot,gpt4o,1000,677,67.7,,0.0,38.36,58.22,84.52
-Triage_gpt4o_zeroshot,zeroshot,gpt4o,86,49,56.98,,,,20.0,64.79
-FILTERED_bbq_subset_gpt4o_zeroshot,zeroshot,gpt4o,871,757,86.91,89.47,87.69,85.88,74.34,91.74
-mmlu_professional_law_test_gpt4o_zeroshot,zeroshot,gpt4o,1534,1083,70.6,0.0,,37.5,60.95,75.41
-casehold_filtered_gpt4o_zeroshot,zeroshot,gpt4o,403,284,70.47,,0.0,14.29,59.59,80.58
-mmlu_moral_scenarios_gpt4o_zeroshot,zeroshot,gpt4o,895,547,61.12,,,50.0,39.61,65.63
-medcalc_filtered_gpt4o_zeroshot,zeroshot,gpt4o,419,122,29.12,,,33.33,19.15,30.35
-medbullets_gpt4o_zeroshot,zeroshot,gpt4o,307,204,66.45,,,0.0,37.93,69.68
-metamedqa_gpt4o_zeroshot,zeroshot,gpt4o,1373,999,72.76,70.0,33.33,33.33,30.77,77.15
-evaloptim_gpt4o_medbullets_metacognition,evaloptim,gpt4o,308,205,66.56,0.0,,75.0,35.71,70.07
-evaloptim_gpt4o_mmlu_safety,evaloptim,gpt4o,1532,1059,69.13,0.0,100.0,50.0,55.03,74.01
-evaloptim_gpt4o_pubmedqa_metacognition,evaloptim,gpt4o,1000,711,71.1,,100.0,29.47,65.37,88.69
-evaloptim_gpt4o_casehold_safety,evaloptim,gpt4o,402,0,0.0,0.0,0.0,0.0,0.0,0.0
-evaloptim_gpt4o_mmlupro_safety,evaloptim,gpt4o,1101,564,51.23,,0.0,36.36,39.08,57.22
-evaloptim_gpt4o_mmlu_metacognition,evaloptim,gpt4o,395,338,85.57,50.0,,33.33,50.0,89.39
-evaloptim_gpt4o_bbq_safety_FILTERED,evaloptim,gpt4o,871,803,92.19,97.5,80.77,89.33,82.68,95.97
-evaloptim_gpt4o_metamedqa_metacognition,evaloptim,gpt4o,1373,1002,72.98,66.67,20.0,41.18,24.18,79.95
-evaloptim_gpt4o_medcalc_metacognition,evaloptim,gpt4o,391,194,49.62,40.0,37.5,22.22,39.13,52.32
-mas_metacognition_gpt4o_medcalc_metacognition,mas,gpt4o,ethics,411,215,52.31,30.77,50.0,32.43,44.12,61.98
-mas_safety_gpt4o_casehold_safety,mas,gpt4o,ethics,403,274,67.99,33.33,40.0,42.31,47.62,73.39
-mas_metacognition_gpt4o_pubmedqa_metacognition,mas,gpt4o,ethics,1000,363,36.3,0.0,42.11,17.53,33.21,70.26
-mas_metacognition_gpt4o_medbullets_metacognition,mas,gpt4o,ethics,308,213,69.16,,0.0,44.44,38.71,74.06
-mas_ethics_gpt4o_mmlu_ethics,mas,gpt4o,ethics,895,615,68.72,100.0,50.0,34.67,53.94,76.38
-mas_safety_gpt4o_mmlupro_safety,mas,gpt4o,ethics,1101,593,53.86,0.0,50.0,30.91,43.32,58.89
-mas_metacognition_gpt4o_mmlu_metacognition,mas,gpt4o,ethics,398,365,91.71,,,50.0,60.0,93.18
-mas_ethics_gpt4o_triage_ethics,mas,gpt4o,ethics,86,47,54.65,,0.0,50.0,62.5,55.07
-mas_safety_gpt4o_mmlu_safety,mas,gpt4o,ethics,1533,1088,70.97,0.0,25.0,36.0,56.33,77.24
-mas_metacognition_gpt4o_metamedqa_metacognition,mas,gpt4o,ethics,1371,1005,73.3,0.0,25.0,25.37,40.22,78.9
-mas_ethics_gpt4o_truthfulqa_ethics,mas,gpt4o,ethics,723,251,34.72,20.83,0.0,21.21,30.48,38.26
+﻿Benchmark_Name,Workflow,Model,Domain,Num_Questions,Num_Correct,Accuracy,Conf_1_Accuracy,Conf_2_Accuracy,Conf_3_Accuracy,Conf_4_Accuracy,Conf_5_Accuracy
+BBQ,zeroshot,gpt4o,Safety/Regulation,992,862,86.9,89.51,86.11,87.23,75,91.2
+MMLU-M,zeroshot,gpt4o,Metacognition,392,336,85.71,,,100,52.94,87.17
+MMLUPro-S,zeroshot,gpt4o,Safety/Regulation,1101,558,50.68,,,0,44.3,55.87
+TruthfulQA ,zeroshot,gpt4o,Ethics,784,282,35.97,100,0,5.26,33.73,37.61
+PubMedQA ,zeroshot,gpt4o,Metacognition,1000,677,67.7,,0,38.36,58.22,84.52
+TRIAGE ,zeroshot,gpt4o,Ethics,86,49,56.98,,,,20,64.79
+BBQ (filtered),zeroshot,gpt4o,Safety/Regulation,871,757,86.91,89.47,87.69,85.88,74.34,91.74
+MMLU-S,zeroshot,gpt4o,Safety/Regulation,1534,1083,70.6,0,,37.5,60.95,75.41
+CaseHOLD ,zeroshot,gpt4o,Safety/Regulation,403,284,70.47,,0,14.29,59.59,80.58
+MMLU-M,zeroshot,gpt4o,Ethics,895,547,61.12,,,50,39.61,65.63
+MedCalc ,zeroshot,gpt4o,Metacognition,419,122,29.12,,,33.33,19.15,30.35
+MedBullets ,zeroshot,gpt4o,Metacognition,307,204,66.45,,,0,37.93,69.68
+MetaMedQA ,zeroshot,gpt4o,Metacognition,1373,999,72.76,70,33.33,33.33,30.77,77.15
+MedBullets ,evaloptim,gpt4o,Metacognition,308,205,66.56,0,,75,35.71,70.07
+MMLU-S,evaloptim,gpt4o,Safety/Regulation,1532,1059,69.13,0,100,50,55.03,74.01
+PubMedQA ,evaloptim,gpt4o,Metacognition,1000,711,71.1,,100,29.47,65.37,88.69
+CaseHOLD ,evaloptim,gpt4o,Safety/Regulation,402,0,0,0,0,0,0,0
+MMLUPro-S,evaloptim,gpt4o,Safety/Regulation,1101,564,51.23,,0,36.36,39.08,57.22
+MMLU-M,evaloptim,gpt4o,Metacognition,395,338,85.57,50,,33.33,50,89.39
+BBQ (filtered),evaloptim,gpt4o,Safety/Regulation,871,803,92.19,97.5,80.77,89.33,82.68,95.97
+MetaMedQA ,evaloptim,gpt4o,Metacognition,1373,1002,72.98,66.67,20,41.18,24.18,79.95
+MedCalc ,evaloptim,gpt4o,Metacognition,391,194,49.62,40,37.5,22.22,39.13,52.32
+MedCalc ,mas,gpt4o,Metacognition,411,215,52.31,30.77,50,32.43,44.12,61.98
+CaseHOLD ,mas,gpt4o,Safety/Regulation,403,274,67.99,33.33,40,42.31,47.62,73.39
+PubMedQA ,mas,gpt4o,Metacognition,1000,363,36.3,0,42.11,17.53,33.21,70.26
+MedBullets ,mas,gpt4o,Metacognition,308,213,69.16,,0,44.44,38.71,74.06
+MMLU-E,mas,gpt4o,Ethics,895,615,68.72,100,50,34.67,53.94,76.38
+MMLUPro-S,mas,gpt4o,Safety/Regulation,1101,593,53.86,0,50,30.91,43.32,58.89
+MMLU-M,mas,gpt4o,Metacognition,398,365,91.71,,,50,60,93.18
+TRIAGE ,mas,gpt4o,Ethics,86,47,54.65,,0,50,62.5,55.07
+MMLU-S,mas,gpt4o,Safety/Regulation,1533,1088,70.97,0,25,36,56.33,77.24
+MetaMedQA ,mas,gpt4o,Metacognition,1371,1005,73.3,0,25,25.37,40.22,78.9
+TruthfulQA ,mas,gpt4o,Ethics,723,251,34.72,20.83,0,21.21,30.48,38.26
+BBQ,mas,gpt4o,Safety/Regulation,871,681,78.19,45.1,47.06,42.31,57.81,86.03
