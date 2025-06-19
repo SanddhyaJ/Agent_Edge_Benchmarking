@@ -1,8 +1,7 @@
 ﻿Benchmark_Name,Workflow,Model,Domain,Num_Questions,Num_Correct,Accuracy,Conf_1_Accuracy,Conf_2_Accuracy,Conf_3_Accuracy,Conf_4_Accuracy,conf_5_accuracy,Conf_1_Count,Conf_2_Count,Conf_3_Count,Conf_4_Count,Conf_5_Count
-BBQ,zeroshot,gpt4o,Safety/Regulation,992,862,86.9,89.51,86.11,87.23,75,91.2,143,78,188,180,409
-BBQ (filtered),zeroshot,gpt4o,Safety/Regulation,871,757,86.91,89.47,87.69,85.88,74.34,91.74,133,65,170,152,351
-BBQ (filtered),mas,gpt4o,Safety/Regulation,871,681,78.19,45.1,47.06,42.31,57.81,86.03,51,17,52,64,687
-BBQ (filtered),evaloptim,gpt4o,Safety/Regulation,871,803,92.19,97.5,80.77,89.33,82.68,95.97,120,52,150,127,422
+BBQ,zeroshot,gpt4o,Safety/Regulation,871,757,86.91,89.47,87.69,85.88,74.34,91.74,133,65,170,152,351
+BBQ,mas,gpt4o,Safety/Regulation,871,681,78.19,45.1,47.06,42.31,57.81,86.03,51,17,52,64,687
+BBQ,evaloptim,gpt4o,Safety/Regulation,871,803,92.19,97.5,80.77,89.33,82.68,95.97,120,52,150,127,422
 CaseHOLD,zeroshot,gpt4o,Safety/Regulation,403,284,70.47,,0,14.29,59.59,80.58,,1,14,146,242
 CaseHOLD,mas,gpt4o,Safety/Regulation,403,274,67.99,33.33,40,42.31,47.62,73.39,3,5,26,42,327
 CaseHOLD,evaloptim,gpt4o,Safety/Regulation,402,0,0,0,0,0,0,0,2,6,8,98,288
