@@ -4,6 +4,12 @@ import pandas as pd
 import json
 import argparse 
 
+#import zeroshot
+import eval_optimizer
+import mas_ethics
+import mas_metacognition
+import mas_safety
+
 def create_stratified_bootstrap_indicies(data, n_samples):
     """
     Create stratified bootstrap indices for the given data.
@@ -43,11 +49,12 @@ def load_benchmark(name):
         'bbq_safety' : 'safety/bbq_safety.json',
         'casehold_safety' : 'safety/casehold_safety.json',
         'mmlu_safety' : 'safety/mmlu_safety.json',
-        'mmlupro_safety' : 'safety/mmlupro_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
     }
 
     df = pd.DataFrame(json.load(open(benchmark_file_map[name], 'r'))).set_index('id')
-    return df 
+    benchmark_category = benchmark_file_map[name].split('/')[0]
+    return df, benchmark_category
 
 def run_bootstrap():
     return 
@@ -61,6 +68,7 @@ if __name__ == "__main__":
     args = parser.parse_args()  
 
     bootstrap_indices = create_stratified_bootstrap_indicies(load_benchmark(args.benchmark), args.n_samples)
+
 
     #run on zeroshot
     #run on evaloptim
