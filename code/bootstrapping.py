@@ -4,23 +4,13 @@ import pandas as pd
 import json
 import argparse 
 
-#import zeroshot
+import zero_shot
 import eval_optimizer
 import mas_ethics
 import mas_metacognition
 import mas_safety
 
 def create_stratified_bootstrap_indicies(data, n_samples):
-    """
-    Create stratified bootstrap indices for the given data.
-
-    Parameters:
-    - data: The input data to bootstrap.
-    - n_samples: The number of bootstrap samples to generate.
-
-    Returns:
-    - A list of tuples, each containing the indices for a bootstrap sample.
-    """
 
     unique_classes = np.unique(data['kind'])
     indices = []
@@ -56,9 +46,16 @@ def load_benchmark(name):
     benchmark_category = benchmark_file_map[name].split('/')[0]
     return df, benchmark_category
 
-def run_bootstrap():
-    return 
+def run_bootstrap(benchmark_name, boostrap_indices):
 
+    zero_shot.main(args.benchmark, bootstrap_indices)
+    eval_optimizer.main(args.benchmark, bootstrap_indices)
+    if benchmark_category == 'ethics':
+        mas_ethics.main(args.benchmark, bootstrap_indices)
+    elif benchmark_category == 'metacognition':
+        mas_metacognition.main(args.benchmark, bootstrap_indices) 
+    elif benchmark_category == 'safety':    
+        mas_safety.main(args.benchmark, bootstrap_indices)
 
 if __name__ == "__main__":
     
@@ -67,13 +64,8 @@ if __name__ == "__main__":
     parser.add_argument('--n_samples', type=int, default=1000, help='Number of bootstrap samples to generate.')
     args = parser.parse_args()  
 
-    bootstrap_indices = create_stratified_bootstrap_indicies(load_benchmark(args.benchmark), args.n_samples)
-
-
-    #run on zeroshot
-    #run on evaloptim
-    #run on mas 
-
-
+    benchmark_df, benchmark_category = load_benchmark(args.benchmark)
+    bootstrap_indices = create_stratified_bootstrap_indicies(benchmark_df, args.n_samples)
+    run_bootstrap(args.benchmark, bootstrap_indices)
 
 
