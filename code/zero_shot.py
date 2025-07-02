@@ -4,22 +4,86 @@ import time
 import json 
 from openai import OpenAI
 from tqdm import tqdm
+import sys 
+import datetime 
+from dotenv import load_dotenv
+import os
 
-def run_benchmark(dataset_path, output_prefix):
-    print()
-    #metacognition - pubmedqa_labeled
-    output_path = f'/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/experiments/RESPONSES_{output_prefix}.csv'     # File to store detailed results
-    summary_path = f'/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/experiments/SUMMARY_{output_prefix}.txt'    # File to store summary statistics
-    model_name = 'llama-3.3-70b-instruct-q4km'                 # Ollama model name (replace as needed)
+load_dotenv()
 
-    ds = json.load(open(dataset_path, 'r'))
-    df = pd.DataFrame(ds)
+def load_benchmark(name):
+    benchmark_file_map = {
+        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
+        'triage_ethics' : 'ethics/triage_ethics.json',
+        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
+        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
+        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
+        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
+        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
+        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
+        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
+        'bbq_safety' : 'safety/bbq_safety.json',
+        'casehold_safety' : 'safety/casehold_safety.json',
+        'mmlu_safety' : 'safety/mmlu_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
+    }
+
+    benchmark_df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
+    return benchmark_df 
+
+def create_client(model_name='gpt-4o-2024-08-06'):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'), model_name=model_name)
+    return client 
+
+def run_query(client, input_text, log_file) -> str:
+
+    answer = None
+    confidence = None
+    invalid = True
+    num_attempts = 0
+
+    while invalid and num_attempts < 5:
+        num_attempts += 1
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": input_text}
+            ]
+        )
+        output = response.choices[0].message.content
+        log_file.write(f"Attempt {num_attempts}: \n {output}\n")
+        log_file.write(f"RESPONSE FORMAT: {str(invalid)} --------------\n")
+        if response_format_check(output):
+            invalid = False
+    
+    if not invalid:
+        final_response = parse_response(output)
+        log_file.write(f"Final Response: {final_response}\n")
+        return final_response
+    else:
+        log_file.write(f"Final Response: NONE\n")
+        return {"answer": None, "confidence": None}
+
+def response_format_check(response) -> bool:
     pattern = re.compile(r'^\s*[0-9]\s*,\s*[1-5]\s*$')
+    return pattern.match(response)
+
+def parse_response(response) -> dict[str : int]:
+    parts = [x.strip() for x in response.split(',')]
+    answer, confidence = int(parts[0]), int(parts[1])
+    return {"answer" : answer, "confidence" : confidence}
+
+def run_benchmark(benchmark_df, experiment_path, client, custom_indices):
 
     results = []
-    #client = OpenAI(api_key=...)
-    #client = OpenAI(api_key=...)
-    for idx, row in tqdm(df.iterrows(), total=len(df), desc=output_prefix):
+    answered_idx_counts = {}
+    for idx in tqdm(custom_indices, desc=f"Running experiment {experiment_path}"):
+        row = benchmark_df.loc[idx]
+        if id in answered_idx_counts:
+            answered_idx_counts[id] += 1
+        else:
+            answered_idx_counts[id] = 1
+
+        f = open(f"{experiment_path}/logs/{id}_{str(answered_idx_counts[id]) if answered_idx_counts[id] > 1 else ""}.txt", "w")
         id = row['id']
         question = row['question']
         choices = row['options']
@@ -32,44 +96,29 @@ def run_benchmark(dataset_path, output_prefix):
             "'ChoiceNumber, ConfidenceScore' where ChoiceNumber is the index (zero-based) of your answer "
             "(e.g., 0, 1, 2, 3) and ConfidenceScore is an integer from 1 to 5."
         )
-        
-        answer = None
-        confidence = None
-        
-        invalid = True
-        num_attempts = 0
+        f.write(f"Prompt: {prompt}\n")
+        f.write('-' * 20 + '\n\n')
+        response = run_query(client, prompt, f)
 
-        while invalid and num_attempts < 5:
-
-            num_attempts += 1
-            response = client.chat.completions.create(
-                messages=[
-                    { "role": "user","content": prompt}
-                ], model=model_name,
-            )
-
-            output = response.choices[0].message.content
-            
-            if pattern.match(output):
-                # Parse "Letter, Number"
-                parts = [x.strip() for x in output.split(',')]
-                answer, confidence = int(parts[0]), int(parts[1])
-                invalid = False
+        f.close()
         
-                is_correct = int(answer == correct)
+        if response.answer is not None:
+            is_correct = int(response.answer == correct)
         
-                results.append({
+            results.append({
                     'id': id,
                     'question': question,
-                    'model_answer': answer,
-                    'confidence': confidence,
+                    'model_answer': response.answer,
+                    'confidence': response.confidence,
                     'correct_answer': correct,
                     'is_correct': is_correct
-                })
-
+            })
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(output_path, index=False)
+    results_df.to_csv(f"{experiment_path}/RESPONSES.csv", index=False)
+    return results_df
+
+def generate_summary(results_df, experiment_path):
 
     total = len(results_df)
     corrects = results_df['is_correct'].sum()
@@ -77,7 +126,7 @@ def run_benchmark(dataset_path, output_prefix):
 
     acc_by_conf = results_df.groupby('confidence')['is_correct'].mean() * 100
 
-    with open(summary_path, 'w') as f:
+    with open(f"{experiment_path}/SUMMARY.txt", 'w') as f:
         f.write(f"Total questions: {total}\n")
         f.write(f"Correct: {corrects}\n")
         f.write(f"Overall Accuracy: {accuracy:.2f}%\n\n")
@@ -86,63 +135,35 @@ def run_benchmark(dataset_path, output_prefix):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
+
+def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices):
+    path = f'{experiment_path}'
+    if os.path.exists(path):
+        # Directory (or file) already there → error out
+        sys.exit(f"Error: '{path}' already exists. Aborting.")
+    try:
+        os.makedirs(path, exist_ok=False)
+        os.makedirs(f'{path}/logs', exist_ok=False)
+        with open(f"{path}/INFO.txt", "w") as info_file:
+            info_file.write(datetime.now().isoformat())
+            info_file.write(f"\nWorkflow: zero-shot\n")
+            info_file.write(f"Mode: gpt-4o-2024-08-06\n")
+            info_file.write(f"Dataset: {dataset_name}\n")
+            info_file.write(f"Bootstrap Indices: {bootstrap_indices}\n")
+            info_file.write(f"Experiment path: {experiment_path}\n")
+    except Exception as e:
+        sys.exit(f"Error creating '{path}': {e}")
+
+def main(args):
+    #TODO
+    benchmark = args[0]
+    bootstrap_indices = args[1]
+    experiment_path = args[2]
+
+    setup_experiment_directory(experiment_path) 
+    client = create_client()
+    run_benchmark(benchmark, client, bootstrap_indices)
+
 if __name__ == "__main__":
-
-    shared_benchmark_path = '/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/benchmarks/v2'
-    
-    """
-    #ethics - triage
-    dataset_path = f'{shared_benchmark_path}/ethics/triage.json'
-    output_prefix = f'Triage_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #ethics - mmlu 
-    dataset_path = f'{shared_benchmark_path}/ethics/mmlu_moral_scenarios_test.json'
-    output_prefix = f'mmlu_moral_scenarios_Qwen3_zeroshot'  
-    run_benchmark(dataset_path, output_prefix)
-    #ethics - truthfulqa
-    dataset_path = f'{shared_benchmark_path}/ethics/TruthfulQA_best.json'
-    output_prefix = f'TruthfulQA_best_Qwen3_zeroshot'  
-    run_benchmark(dataset_path, output_prefix)
-    """
-    """
-    #metacognition - metamedqa
-    dataset_path = f'{shared_benchmark_path}/metacognition/metamedqa.json'
-    output_prefix = f'metamedqa_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #metacognition - mmlu
-    dataset_path = f'{shared_benchmark_path}/metacognition/mmlu_metacognition_test.json'
-    output_prefix = f'mmlu_metacognition_test_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #metacognition - pubmedqa_labeled
-    dataset_path = f'{shared_benchmark_path}/metacognition/pubmedqa_labeled.json'
-    output_prefix = f'pubmedqa_labeled_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #metacognition - medbullets 
-    dataset_path = f'{shared_benchmark_path}/metacognition/medbullets_op5.json'
-    output_prefix = f'medbullets_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    """
-    #metacognition - medcalc_filtered
-    dataset_path = f'{shared_benchmark_path}/metacognition/medcalc_filtered.json'
-    output_prefix = f'medcalc_filtered_llama3pt3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-
-    """
-    #reg - bbq
-    dataset_path = f'{shared_benchmark_path}/safety/bbq_subset.json'
-    output_prefix = f'bbq_subset_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #reg - mmlu pro
-    dataset_path = f'{shared_benchmark_path}/safety/mmlu_pro_regulatory_test.json'
-    output_prefix = f'mmlu_pro_regulatory_test_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #reg - mmlu 
-    dataset_path = f'{shared_benchmark_path}/safety/mmlu_professional_law_test.json'
-    output_prefix = f'mmlu_professional_law_test_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    #reg - casehold (filtered)
-    dataset_path = f'{shared_benchmark_path}/safety/casehold_filtered.json'
-    output_prefix = f'casehold_filtered_Qwen3_zeroshot'
-    run_benchmark(dataset_path, output_prefix)
-    """
+    main(sys.argv[1:])
 
