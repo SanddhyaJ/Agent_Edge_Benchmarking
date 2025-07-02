@@ -12,18 +12,9 @@ import mas_safety
 
 def create_stratified_bootstrap_indicies(data, n_samples):
 
-    unique_classes = np.unique(data['kind'])
-    indices = []
-
-    for _ in range(n_samples):
-        sample_indices = []
-        for cls in unique_classes:
-            cls_indices = np.where(data['kind'] == cls)[0]
-            sampled_indices = resample(cls_indices, replace=True)
-            sample_indices.extend(sampled_indices)
-        indices.append(tuple(sample_indices))
-
-    return indices
+    bootstrap_indices = resample(data, replace=True, n_samples=n_samples, stratify=data['kind'], random_state=42)
+    return bootstrap_indices.id.tolist()
+    
 
 def load_benchmark(name):
     benchmark_file_map = {
@@ -42,7 +33,7 @@ def load_benchmark(name):
         'mmlupro_safety' : 'safety/mmlupro_safety.json'
     }
 
-    df = pd.DataFrame(json.load(open(benchmark_file_map[name], 'r'))).set_index('id')
+    df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
     benchmark_category = benchmark_file_map[name].split('/')[0]
     return df, benchmark_category
 
