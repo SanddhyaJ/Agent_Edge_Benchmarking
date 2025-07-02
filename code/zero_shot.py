@@ -51,7 +51,8 @@ def run_query(client, input_text, log_file) -> str:
         )
         output = response.choices[0].message.content
         log_file.write(f"Attempt {num_attempts}: \n {output}\n")
-        log_file.write(f"RESPONSE FORMAT: {str(invalid)} --------------\n")
+        log_file.write(f"RESPONSE FORMAT: {str(invalid)}\n")
+        log_file.write('-' * 20 + '\n\n')
         if response_format_check(output):
             invalid = False
     
@@ -123,7 +124,6 @@ def generate_summary(results_df, experiment_path):
     total = len(results_df)
     corrects = results_df['is_correct'].sum()
     accuracy = (corrects / total) * 100 if total > 0 else 0
-
     acc_by_conf = results_df.groupby('confidence')['is_correct'].mean() * 100
 
     with open(f"{experiment_path}/SUMMARY.txt", 'w') as f:
@@ -135,16 +135,14 @@ def generate_summary(results_df, experiment_path):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
-
 def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices):
-    path = f'{experiment_path}'
-    if os.path.exists(path):
+    if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
-        sys.exit(f"Error: '{path}' already exists. Aborting.")
+        sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
     try:
-        os.makedirs(path, exist_ok=False)
-        os.makedirs(f'{path}/logs', exist_ok=False)
-        with open(f"{path}/INFO.txt", "w") as info_file:
+        os.makedirs(experiment_path, exist_ok=False)
+        os.makedirs(f'{experiment_path}/logs', exist_ok=False)
+        with open(f"{experiment_path}/INFO.txt", "w") as info_file:
             info_file.write(datetime.now().isoformat())
             info_file.write(f"\nWorkflow: zero-shot\n")
             info_file.write(f"Mode: gpt-4o-2024-08-06\n")
@@ -152,10 +150,10 @@ def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices)
             info_file.write(f"Bootstrap Indices: {bootstrap_indices}\n")
             info_file.write(f"Experiment path: {experiment_path}\n")
     except Exception as e:
-        sys.exit(f"Error creating '{path}': {e}")
+        sys.exit(f"Error creating '{experiment_path}': {e}")
 
 def main(args):
-    #TODO
+    
     benchmark = args[0]
     bootstrap_indices = args[1]
     experiment_path = args[2]
