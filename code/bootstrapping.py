@@ -37,7 +37,7 @@ def load_benchmark(name):
     benchmark_category = benchmark_file_map[name].split('/')[0]
     return df, benchmark_category
 
-def run_bootstrap(benchmark_name, boostrap_indices):
+def run_bootstrap(benchmark_name, boostrap_indices, output_path):
 
     zero_shot.main(args.benchmark, bootstrap_indices)
     eval_optimizer.main(args.benchmark, bootstrap_indices)
@@ -53,6 +53,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create bootstrap samples from the given data.')
     parser.add_argument('--benchmark', type=str, required=True, help='Name of benchmark dataset')
     parser.add_argument('--n_samples', type=int, default=1000, help='Number of bootstrap samples to generate.')
+    parser.add_argument('--experiment_path', type=str, default='bootstrap', help='Prefix for output files.')
     args = parser.parse_args()  
 
     benchmark_df, benchmark_category = load_benchmark(args.benchmark)

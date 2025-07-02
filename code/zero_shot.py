@@ -84,7 +84,7 @@ def run_benchmark(benchmark_df, experiment_path, client, custom_indices):
         else:
             answered_idx_counts[id] = 1
 
-        f = open(f"{experiment_path}/logs/{id}_{str(answered_idx_counts[id]) if answered_idx_counts[id] > 1 else ""}.txt", "w")
+        f = open(f"{experiment_path}/logs/{id}_{str(answered_idx_counts[id]) if answered_idx_counts[id] > 1 else ''}.txt", "w")
         id = row['id']
         question = row['question']
         choices = row['options']
