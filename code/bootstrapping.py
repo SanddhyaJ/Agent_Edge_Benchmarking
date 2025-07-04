@@ -13,7 +13,7 @@ import mas_safety
 def create_stratified_bootstrap_indicies(data, n_samples):
 
     bootstrap_indices = resample(data, replace=True, n_samples=n_samples, stratify=data['kind'], random_state=42)
-    return bootstrap_indices.id.tolist()
+    return bootstrap_indices.index.tolist()
     
 
 def load_benchmark(name):
@@ -39,14 +39,14 @@ def load_benchmark(name):
 
 def run_bootstrap(benchmark_name, boostrap_indices, output_path):
 
-    zero_shot.main(args.benchmark, bootstrap_indices)
-    eval_optimizer.main(args.benchmark, bootstrap_indices)
-    if benchmark_category == 'ethics':
-        mas_ethics.main(args.benchmark, bootstrap_indices)
-    elif benchmark_category == 'metacognition':
-        mas_metacognition.main(args.benchmark, bootstrap_indices) 
-    elif benchmark_category == 'safety':    
-        mas_safety.main(args.benchmark, bootstrap_indices)
+    zero_shot.main([args.benchmark, bootstrap_indices, output_path])
+    #eval_optimizer.main(args.benchmark, bootstrap_indices)
+    #if benchmark_category == 'ethics':
+    #    mas_ethics.main(args.benchmark, bootstrap_indices)
+    #elif benchmark_category == 'metacognition':
+    #    mas_metacognition.main(args.benchmark, bootstrap_indices) 
+    #elif benchmark_category == 'safety':    
+    #    mas_safety.main(args.benchmark, bootstrap_indices)
 
 if __name__ == "__main__":
     
@@ -58,6 +58,6 @@ if __name__ == "__main__":
 
     benchmark_df, benchmark_category = load_benchmark(args.benchmark)
     bootstrap_indices = create_stratified_bootstrap_indicies(benchmark_df, args.n_samples)
-    run_bootstrap(args.benchmark, bootstrap_indices)
+    run_bootstrap(args.benchmark, bootstrap_indices, args.experiment_path)
 
 
