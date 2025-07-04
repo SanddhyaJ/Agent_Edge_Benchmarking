@@ -280,7 +280,7 @@ def main(args):
     experiment_path = args[2]
     workflow = args[3]
 
-    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow)
+    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model=model_name)
 
     results = run_benchmark(
         benchmark_df=load_benchmark(benchmark), 

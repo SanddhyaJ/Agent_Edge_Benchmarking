@@ -39,8 +39,9 @@ def load_benchmark(name):
 
 def run_bootstrap(benchmark_name, boostrap_indices, output_path):
 
-    zero_shot.main([args.benchmark, bootstrap_indices, output_path])
-    #eval_optimizer.main(args.benchmark, bootstrap_indices)
+    #TODO: modify output paths by workflow 
+    zero_shot.main([args.benchmark, bootstrap_indices, f"{output_path}/zero_shot"])
+    eval_optimizer.main(args.benchmark, bootstrap_indices, f"{output_path}/eval_optimizer")
     #if benchmark_category == 'ethics':
     #    mas_ethics.main(args.benchmark, bootstrap_indices)
     #elif benchmark_category == 'metacognition':
