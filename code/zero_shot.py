@@ -135,7 +135,7 @@ def generate_summary(results_df, experiment_path):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
-def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices):
+def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices, workflow):
     if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
         sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
@@ -144,7 +144,7 @@ def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices)
         os.makedirs(f'{experiment_path}/logs', exist_ok=False)
         with open(f"{experiment_path}/INFO.txt", "w") as info_file:
             info_file.write(datetime.datetime.now().isoformat())
-            info_file.write("\nWorkflow: zero-shot\n")
+            info_file.write(f"\nWorkflow: {workflow}\n")
             info_file.write("Model: gpt-4o-2024-08-06\n")
             info_file.write(f"Dataset: {dataset_name}\n")
             info_file.write(f"Bootstrap Indices: {bootstrap_indices}\n")
@@ -157,8 +157,9 @@ def main(args):
     benchmark = args[0]
     bootstrap_indices = args[1]
     experiment_path = args[2]
+    workflow = args[3]
 
-    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices,) 
+    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow) 
     client = create_client()
     run_benchmark(benchmark_df=load_benchmark(benchmark), experiment_path=experiment_path, client=client, custom_indices=bootstrap_indices)
 
