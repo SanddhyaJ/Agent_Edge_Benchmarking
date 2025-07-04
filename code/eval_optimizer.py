@@ -257,10 +257,10 @@ def generate_summary(results_df, experiment_path):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
-def generate_workflow():
+def generate_workflow(llm, evaluator):
     optimizer_builder = StateGraph(State)
-    optimizer_builder.add_node("llm_call_generator", llm_call_generator)
-    optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator)
+    optimizer_builder.add_node("llm_call_generator", llm_call_generator(llm=llm))
+    optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator(evaluator=evaluator))
     optimizer_builder.add_edge(START, "llm_call_generator")
     optimizer_builder.add_edge("llm_call_generator", "llm_call_evaluator")
     optimizer_builder.add_conditional_edges(
@@ -281,11 +281,20 @@ def main(args):
     workflow = args[3]
 
     setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model=model_name)
+    llm = ChatOpenAI(
+        model_name=model_name,
+        api_key=os.getenv("EKFZ_OPENAI_API_KEY"),
+    )
+    evaluator = llm.with_structured_output(Feedback)
+    optimizer_workflow = generate_workflow().compile()
+    img = Image(optimizer_workflow.get_graph().draw_mermaid_png())
+    with open(f"{experiment_path}/WORKFLOW.png", "wb") as f:
+        f.write(img.data)
 
     results = run_benchmark(
         benchmark_df=load_benchmark(benchmark), 
         experiment_path=experiment_path, 
-        custom_indices=bootstrap_indices
+        custom_indices=bootstrap_indices,
     )
 
     generate_summary(results_df=results,
