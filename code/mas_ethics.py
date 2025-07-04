@@ -40,6 +40,8 @@ def justice(q, choices : list[str]) -> str:
         q: quesiton string
         choices: list of answer choices
     """
+
+    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
     msg = llm.invoke(f"You are an expert in justice in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -52,6 +54,7 @@ def beneficience(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
+    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
     msg = llm.invoke(f"You are an expert in beneficience in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -64,6 +67,7 @@ def autonomy(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
+    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
     msg = llm.invoke(f"You are an expert in autonomy in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -75,6 +79,7 @@ def non_maleficence(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
+    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
     msg = llm.invoke(f"You are an expert in non-maleficence in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -82,6 +87,9 @@ def non_maleficence(q, choices : list[str]) -> str:
 def llm_call(state: MessagesState):
     """LLM decides whether to call a tool or not"""
 
+    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    tools = [autonomy, beneficience, justice, non_maleficence]
+    llm_with_tools = llm.bind_tools(tools)
     return {
         "messages": [
             llm_with_tools.invoke(
@@ -97,6 +105,8 @@ def llm_call(state: MessagesState):
 
 def tool_node(state: dict):
     """Performs the tool call"""
+    tools = [autonomy, beneficience, justice, non_maleficence]
+    tools_by_name = {tool.name: tool for tool in tools}
     result = []
     for tool_call in state["messages"][-1].tool_calls:
         tool = tools_by_name[tool_call["name"]]
@@ -174,38 +184,26 @@ def save_langgraph_run(messages, f):
             # Separator
         f.write("-" * 40 + "\n\n")
 
+def run_benchmark(benchmark_df, experiment_path, custom_indices, model_name, agent):
 
-def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sample):
-
-    dataset_path = '../../benchmarks/'
-    dataset_paths = {
-        "mmlu_ethics": "ethics/mmlu_ethics.json",
-        "triage_ethics": "ethics/triage_ethics.json",
-        "truthfulqa_ethics": "ethics/truthfulqa_ethics.json",
-        "metamedqa_metacognition": "metacognition/metamedqa_metacognition.json",
-        "medbullets_metacognition": "metacognition/medbullets_metacognition.json",   
-        "medcalc_metacognition" : "metacognition/medcalc_metacognition.json",
-        "mmlu_metacognition": "metacognition/mmlu_metacognition.json",
-        "pubmedqa_metacognition": "metacognition/pubmedqa_metacognition.json",
-        "bbq_safety" : "bbq_safety/bbq_safety.json",
-        "casehold_safety" : "casehold_safety/casehold_safety.json",
-        "mmlupro_safety" : "safety/mmlupro_safety.json",
-        "mmlu_safety" : "safety/mmlu_safety.json"
-    }
-
-    ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
-    df = pd.DataFrame(ds)
-    if percent_sample < 1:
-        df_subset = sample_dataset(df, sample_size=percent_sample) 
-    else:
-        df_subset = df
+    #ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
+    #df = pd.DataFrame(ds)
+    #if percent_sample < 1:
+    #    df_subset = sample_dataset(df, sample_size=percent_sample) 
+    #else:
+    #    df_subset = df
     
     results = []
-    for idx, row in tqdm(df_subset .iterrows(), total=len(df_subset), desc=f"{experiment_name} - {dataset} ({percent_sample*100:.1f}%)"):
+    answered_idx_counts = {}
+    for idx in tqdm(custom_indices, desc=f"Running experiment {experiment_path}"):
+        row = benchmark_df.loc[idx]
+        if idx in answered_idx_counts:
+            answered_idx_counts[idx] += 1
+        else:
+            answered_idx_counts[idx] = 1
 
-        f = open(f'{shared_benchmark_path}/{experiment_name}_{dataset}/logs/{str(row["id"])}.txt', 'w')
+        f = open(f"{experiment_path}/logs/{idx}_{str(answered_idx_counts[idx]) if answered_idx_counts[idx] > 1 else ''}.txt", "w")
         
-        id = row['id']
         question = row['question']
         choices = row['options']
         correct = row['target']
@@ -231,7 +229,7 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
         is_valid = check_response_format(output, len(choices))
 
         save_langgraph_run(state['messages'], f)
-        f.write(f"******************************\n\n")
+        f.write("******************************\n\n")
 
         num_attempts = 0
         while not is_valid and num_attempts < 5:
@@ -241,7 +239,7 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
             is_valid = check_response_format(output, len(choices))
 
             save_langgraph_run(state['messages'], f)
-            f.write(f"******************************\n\n")
+            f.write("******************************\n\n")
         
         if is_valid:
             answer = int(output.split(',')[0].replace(' ','')) 
@@ -255,7 +253,7 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
             is_correct = int(answer == correct)
         
             results.append({
-                    'id': id,
+                    'id': idx,
                     'model_answer': answer,
                     'confidence': confidence,
                     'correct_answer': correct,
@@ -265,36 +263,34 @@ def run_benchmark(dataset, shared_benchmark_path, experiment_name, percent_sampl
         f.close()
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(f'{shared_benchmark_path}/{experiment_name}_{dataset}/RESPONSES.csv', index=False)
+    results_df.to_csv(f'{experiment_path}/RESPONSES.csv', index=False)
 
     return results_df
 
-def setup_experiment_directory(experiment_name, dataset_name, shared_benchmark_path, percent_sample):
-    path = f'{shared_benchmark_path}/{experiment_name}_{dataset_name}'
-    if os.path.exists(path):
+def setup_experiment_directory(experiment_path, dataset_name, custom_indices, workflow, model = 'gpt-4o-2024-08-06'):
+    if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
-        sys.exit(f"Error: '{path}' already exists. Aborting.")
+        sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
     try:
-        os.makedirs(path, exist_ok=False)
-        os.makedirs(f'{path}/logs', exist_ok=False)
-        with open(f"{path}/INFO.txt", "w") as info_file:
+        os.makedirs(experiment_path, exist_ok=False)
+        os.makedirs(f'{experiment_path}/logs', exist_ok=False)
+        with open(f"{experiment_path}/INFO.txt", "w") as info_file:
             info_file.write(datetime.now().isoformat())
-            info_file.write(f"\nExperiment: {experiment_name}\n")
+            info_file.write(f"\nWorkflow: {workflow}\n")
+            info_file.write(f"Model: {model}\n")
             info_file.write(f"Dataset: {dataset_name}\n")
-            info_file.write(f"Percent Sample: {str(percent_sample)}\n")
-            info_file.write(f"Shared Benchmark Path: {shared_benchmark_path}\n")
+            info_file.write(f"Bootstrap Indices: {custom_indices}\n")
+            info_file.write(f"Experiment Path: {experiment_path}\n")
     except Exception as e:
-        sys.exit(f"Error creating '{path}': {e}")
+        sys.exit(f"Error creating '{experiment_path}': {e}")
 
-def generate_summary(results_df, shared_benchmark_path, experiment_name, dataset_name):
+def generate_summary(results_df, experiment_path):
 
     total = len(results_df)
     corrects = results_df['is_correct'].sum()
     accuracy = (corrects / total) * 100 if total > 0 else 0
-
     acc_by_conf = results_df.groupby('confidence')['is_correct'].mean() * 100
-
-    with open(f"{shared_benchmark_path}/{experiment_name}_{dataset_name}/SUMMARY.txt", 'w') as f:
+    with open(f"{experiment_path}/SUMMARY.txt", 'w') as f:
         f.write(f"Total questions: {total}\n")
         f.write(f"Correct: {corrects}\n")
         f.write(f"Overall Accuracy: {accuracy:.2f}%\n\n")
@@ -322,39 +318,51 @@ def generate_workflow():
     agent_builder.add_edge("environment", "llm_call")
     return agent_builder
 
-if __name__ == "__main__":
-    model_name = sys.argv[1] if len(sys.argv) > 1 else 'gpt-4o-2024-08-06'
-    dataset = sys.argv[2] 
-    percent_sample = float(sys.argv[3])
-    experiment_name = sys.argv[4] if len(sys.argv) > 2 else 'evaloptimizer_no_memory'
-    shared_benchmark_path = sys.argv[5] if len(sys.argv) > 3 else '/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/experiments/v3'
+def load_benchmark(name):
 
-    setup_experiment_directory(experiment_name=experiment_name, 
-                                dataset_name=dataset, 
-                                shared_benchmark_path=shared_benchmark_path, 
-                                percent_sample=percent_sample)
+    benchmark_file_map = {
+        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
+        'triage_ethics' : 'ethics/triage_ethics.json',
+        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
+        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
+        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
+        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
+        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
+        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
+        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
+        'bbq_safety' : 'safety/bbq_safety.json',
+        'casehold_safety' : 'safety/casehold_safety.json',
+        'mmlu_safety' : 'safety/mmlu_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
+    }
 
-    llm = ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_API_KEY"))
-    # Augment the LLM with tools
-    tools = [autonomy, beneficience, justice, non_maleficence]
-    tools_by_name = {tool.name: tool for tool in tools}
-    llm_with_tools = llm.bind_tools(tools)
+    benchmark_df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
+    return benchmark_df 
 
+def main(args):
+
+    model_name = 'gpt-4o-2024-08-06'
+    benchmark = args[0]
+    custom_indices = args[1]
+    experiment_path = args[2]
+    workflow = args[3]
+
+    setup_experiment_directory(experiment_path=experiment_path, dataset_name=benchmark, custom_indices=custom_indices, workflow=workflow, model=model_name)
     agent = generate_workflow().compile()
     img = Image(agent.get_graph().draw_mermaid_png())
-    with open(f'{shared_benchmark_path}/{experiment_name}_{dataset}/WORKFLOW.png', "wb") as f:
+    with open(f'{experiment_path}/WORKFLOW.png', "wb") as f:
         f.write(img.data)
 
     results = run_benchmark(
-            dataset=dataset,
-            shared_benchmark_path=shared_benchmark_path,
-            experiment_name=experiment_name,
-            percent_sample=percent_sample
-        )
+        benchmark_df=load_benchmark(benchmark), 
+        experiment_path=experiment_path, 
+        custom_indices=custom_indices,
+        model_name = model_name,
+        agent = agent
+    )
 
-    generate_summary(
-            results_df=results,
-            shared_benchmark_path=shared_benchmark_path,
-            experiment_name=experiment_name,
-            dataset_name=dataset
-        )
+    generate_summary(results_df=results,
+                     experiment_path = experiment_path)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

@@ -36,8 +36,6 @@ def create_client() -> OpenAI:
     return client 
 
 def run_query(client, input_text, log_file, model_name='gpt-4o-2024-08-06') -> str:
-    answer = None
-    confidence = None
     invalid = True
     num_attempts = 0
 
@@ -61,7 +59,7 @@ def run_query(client, input_text, log_file, model_name='gpt-4o-2024-08-06') -> s
         log_file.write(f"Final Response: {final_response}\n")
         return final_response
     else:
-        log_file.write(f"Final Response: NONE\n")
+        log_file.write("Final Response: NONE\n")
         return {"answer": None, "confidence": None}
 
 def response_format_check(response) -> bool:
