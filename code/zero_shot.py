@@ -107,7 +107,7 @@ def run_benchmark(benchmark_df, experiment_path, client, custom_indices):
             is_correct = int(response['answer'] == correct)
         
             results.append({
-                    'id': id,
+                    'id': idx,
                     'question': question,
                     'model_answer': response['answer'],
                     'confidence': response['confidence'],

@@ -28,6 +28,7 @@ class State(TypedDict):
     valid_or_not: str
     log_file: TextIOWrapper
     num_iters: int
+    model_name: str
 
 class Feedback(BaseModel):
     grade: Literal["valid", "not valid"] = Field(
@@ -49,6 +50,12 @@ def check_response_format(response: str, num_choices: int) -> bool:
 
 # Nodes
 def llm_call_generator(state: State):
+
+    llm = ChatOpenAI(
+        model_name=state['model_name'],
+        api_key=os.getenv("EKFZ_OPENAI_API_KEY"),
+    )
+
     """LLM generates a response"""
     log_file = state.get("log_file")
     if state.get("feedback"):
@@ -89,6 +96,11 @@ def llm_call_generator(state: State):
 def llm_call_evaluator(state: State):
     """LLM evaluates the response"""
 
+    llm = ChatOpenAI(
+        model_name=state['model_name'],
+        api_key=os.getenv("EKFZ_OPENAI_API_KEY"),
+    )
+    evaluator = llm.with_structured_output(Feedback)
     grading_prompt = f"QUESTION:\n{state['question']}"
     i = 0
     for val in state['choices']:
@@ -159,7 +171,7 @@ def load_benchmark(name):
     benchmark_df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
     return benchmark_df 
 
-def run_benchmark(benchmark_df, experiment_path, custom_indices):
+def run_benchmark(benchmark_df, experiment_path, custom_indices, optimizer_workflow, model_name='gpt-4o-2024-08-06'):
 
     #ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
     #df = pd.DataFrame(ds)
@@ -203,7 +215,7 @@ def run_benchmark(benchmark_df, experiment_path, custom_indices):
 
         state = optimizer_workflow.invoke({"question": question, "prompt" : prompt,
                                    "choices": choices, 
-                                   "log_file": f, "id":id, "num_iters" : 0, 'feedback' : []}, RunnableConfig(recursion_limit=100))
+                                   "log_file": f, "id":id, "num_iters" : 0, 'feedback' : [], 'model_name' : model_name}, RunnableConfig(recursion_limit=100))
         answer = state["response"]
         confidence = state["confidence"]
 
@@ -212,7 +224,7 @@ def run_benchmark(benchmark_df, experiment_path, custom_indices):
             is_correct = int(answer == correct)
         
             results.append({
-                    'id': id,
+                    'id': idx,
                     'model_answer': answer,
                     'confidence': confidence,
                     'correct_answer': correct,
@@ -233,7 +245,7 @@ def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices,
         os.makedirs(experiment_path, exist_ok=False)
         os.makedirs(f'{experiment_path}/logs', exist_ok=False)
         with open(f"{experiment_path}/INFO.txt", "w") as info_file:
-            info_file.write(datetime.datetime.now().isoformat())
+            info_file.write(datetime.now().isoformat())
             info_file.write(f"\nWorkflow: {workflow}\n")
             info_file.write(f"Model: {model}\n")
             info_file.write(f"Dataset: {dataset_name}\n")
@@ -257,10 +269,10 @@ def generate_summary(results_df, experiment_path):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
-def generate_workflow(llm, evaluator):
+def generate_workflow():
     optimizer_builder = StateGraph(State)
-    optimizer_builder.add_node("llm_call_generator", llm_call_generator(llm=llm))
-    optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator(evaluator=evaluator))
+    optimizer_builder.add_node("llm_call_generator", llm_call_generator)
+    optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator)
     optimizer_builder.add_edge(START, "llm_call_generator")
     optimizer_builder.add_edge("llm_call_generator", "llm_call_evaluator")
     optimizer_builder.add_conditional_edges(
@@ -281,11 +293,11 @@ def main(args):
     workflow = args[3]
 
     setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model=model_name)
-    llm = ChatOpenAI(
-        model_name=model_name,
-        api_key=os.getenv("EKFZ_OPENAI_API_KEY"),
-    )
-    evaluator = llm.with_structured_output(Feedback)
+    #llm = ChatOpenAI(
+    #    model_name=model_name,
+    #    api_key=os.getenv("EKFZ_OPENAI_API_KEY"),
+    #)
+    #evaluator = llm.with_structured_output(Feedback)
     optimizer_workflow = generate_workflow().compile()
     img = Image(optimizer_workflow.get_graph().draw_mermaid_png())
     with open(f"{experiment_path}/WORKFLOW.png", "wb") as f:
@@ -295,6 +307,8 @@ def main(args):
         benchmark_df=load_benchmark(benchmark), 
         experiment_path=experiment_path, 
         custom_indices=bootstrap_indices,
+        optimizer_workflow=optimizer_workflow,
+        model_name = model_name
     )
 
     generate_summary(results_df=results,
