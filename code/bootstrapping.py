@@ -39,10 +39,10 @@ def load_benchmark(name):
 
 def run_bootstrap(benchmark_name, boostrap_indices, output_path):
 
-    #zero_shot.main([benchmark_name, bootstrap_indices, f"{output_path}/zero_shot", "zero-shot"])
-    #eval_optimizer.main([benchmark_name, bootstrap_indices, f"{output_path}/eval_optimizer", "evaluator-optimizer"])
-    #if benchmark_category == 'ethics':
-    #    mas_ethics.main([benchmark_name, bootstrap_indices, f"{output_path}/mas", "mas-ethics"])
+    zero_shot.main([benchmark_name, bootstrap_indices, f"{output_path}/zero_shot", "zero-shot"])
+    eval_optimizer.main([benchmark_name, bootstrap_indices, f"{output_path}/eval_optimizer", "evaluator-optimizer"])
+    if benchmark_category == 'ethics':
+        mas_ethics.main([benchmark_name, bootstrap_indices, f"{output_path}/mas", "mas-ethics"])
     if benchmark_category == 'metacognition':
         mas_metacognition.main([benchmark_name, bootstrap_indices, f"{output_path}/mas", "mas-metacognition"])
     elif benchmark_category == 'safety':    
