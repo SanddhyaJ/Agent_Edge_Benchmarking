@@ -181,27 +181,6 @@ def save_langgraph_run(messages, f):
             # Separator
         f.write("-" * 40 + "\n\n")
 
-def load_benchmark(name):
-
-    benchmark_file_map = {
-        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
-        'triage_ethics' : 'ethics/triage_ethics.json',
-        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
-        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
-        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
-        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
-        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
-        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
-        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
-        'bbq_safety' : 'safety/bbq_safety.json',
-        'casehold_safety' : 'safety/casehold_safety.json',
-        'mmlu_safety' : 'safety/mmlu_safety.json',
-        'mmlupro_safety' : 'safety/mmlupro_safety.json'
-    }
-
-    benchmark_df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
-    return benchmark_df 
-
 def run_benchmark(benchmark_df, experiment_path, custom_indices, model_name, agent):
 
     #ds = json.load(open(f"{dataset_path}/{dataset_paths[dataset]}", 'r'))
@@ -335,39 +314,51 @@ def generate_workflow():
     agent_builder.add_edge("environment", "llm_call")
     return agent_builder
 
-if __name__ == "__main__":
-    model_name = sys.argv[1] if len(sys.argv) > 1 else 'gpt-4o-2024-08-06'
-    dataset = sys.argv[2] 
-    percent_sample = float(sys.argv[3])
-    experiment_name = sys.argv[4] if len(sys.argv) > 2 else 'evaloptimizer_no_memory'
-    shared_benchmark_path = sys.argv[5] if len(sys.argv) > 3 else '/Users/sanddhyajayabalan/Desktop/Projects/Prj_MetaMedQA/experiments/v3'
+def load_benchmark(name):
 
-    setup_experiment_directory(experiment_name=experiment_name, 
-                                dataset_name=dataset, 
-                                shared_benchmark_path=shared_benchmark_path, 
-                                percent_sample=percent_sample)
+    benchmark_file_map = {
+        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
+        'triage_ethics' : 'ethics/triage_ethics.json',
+        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
+        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
+        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
+        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
+        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
+        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
+        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
+        'bbq_safety' : 'safety/bbq_safety.json',
+        'casehold_safety' : 'safety/casehold_safety.json',
+        'mmlu_safety' : 'safety/mmlu_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
+    }
 
-    llm = ChatOpenAI(model=model_name, api_key=os.getenv("OPENAI_API_KEY"))
-    # Augment the LLM with tools
-    tools = [clinician, medical_researcher, logic_expert, pharmacist_expert]
-    tools_by_name = {tool.name: tool for tool in tools}
-    llm_with_tools = llm.bind_tools(tools)
+    benchmark_df = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[name]}", 'r'))).set_index('id')
+    return benchmark_df 
 
+def main(args):
+
+    model_name = 'gpt-4o-2024-08-06'
+    benchmark = args[0]
+    custom_indices = args[1]
+    experiment_path = args[2]
+    workflow = args[3]
+
+    setup_experiment_directory(experiment_path=experiment_path, dataset_name=benchmark, custom_indices=custom_indices, workflow=workflow, model=model_name)
     agent = generate_workflow().compile()
     img = Image(agent.get_graph().draw_mermaid_png())
-    with open(f'{shared_benchmark_path}/{experiment_name}_{dataset}/WORKFLOW.png', "wb") as f:
+    with open(f'{experiment_path}/WORKFLOW.png', "wb") as f:
         f.write(img.data)
 
     results = run_benchmark(
-            dataset=dataset,
-            shared_benchmark_path=shared_benchmark_path,
-            experiment_name=experiment_name,
-            percent_sample=percent_sample
-        )
+        benchmark_df=load_benchmark(benchmark), 
+        experiment_path=experiment_path, 
+        custom_indices=custom_indices,
+        model_name = model_name,
+        agent = agent
+    )
 
-    generate_summary(
-            results_df=results,
-            shared_benchmark_path=shared_benchmark_path,
-            experiment_name=experiment_name,
-            dataset_name=dataset
-        )
+    generate_summary(results_df=results,
+                     experiment_path = experiment_path)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
