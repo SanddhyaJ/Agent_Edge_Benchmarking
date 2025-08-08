@@ -32,10 +32,10 @@ def load_benchmark(name):
     return benchmark_df 
 
 def create_client() -> OpenAI:
-    client = OpenAI(api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
+    client = OpenAI(api_key=os.getenv('LITE_LLM_KEY'), base_url=os.getenv('LITE_LLM_BASE_URL'))
     return client 
 
-def run_query(client, input_text, log_file, model_name='gpt-4o-2024-08-06') -> str:
+def run_query(client, input_text, log_file, model_name) -> str:
     invalid = True
     num_attempts = 0
 
@@ -71,7 +71,7 @@ def parse_response(response) -> dict[str : int]:
     answer, confidence = int(parts[0]), int(parts[1])
     return {"answer" : answer, "confidence" : confidence}
 
-def run_benchmark(benchmark_df, experiment_path, client, custom_indices):
+def run_benchmark(benchmark_df, experiment_path, client, custom_indices, model_name):
 
     results = []
     answered_idx_counts = {}
@@ -97,7 +97,7 @@ def run_benchmark(benchmark_df, experiment_path, client, custom_indices):
         )
         f.write(f"Prompt: {prompt}\n")
         f.write('-' * 20 + '\n\n')
-        response = run_query(client, prompt, f)
+        response = run_query(client, prompt, f, model_name)
 
         f.close()
         
@@ -133,7 +133,7 @@ def generate_summary(results_df, experiment_path):
             if pd.notna(conf):
                 f.write(f"  {int(conf)}: {acc:.2f}%\n")
 
-def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices, workflow):
+def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices, workflow, model_name):
     if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
         sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
@@ -143,7 +143,7 @@ def setup_experiment_directory(experiment_path, dataset_name, bootstrap_indices,
         with open(f"{experiment_path}/INFO.txt", "w") as info_file:
             info_file.write(datetime.datetime.now().isoformat())
             info_file.write(f"\nWorkflow: {workflow}\n")
-            info_file.write("Model: gpt-4o-2024-08-06\n")
+            info_file.write(f"Model: {model_name}\n")
             info_file.write(f"Dataset: {dataset_name}\n")
             info_file.write(f"Bootstrap Indices: {bootstrap_indices}\n")
             info_file.write(f"Experiment path: {experiment_path}\n")
@@ -156,10 +156,31 @@ def main(args):
     bootstrap_indices = args[1]
     experiment_path = args[2]
     workflow = args[3]
+    model_name = args[4] 
 
-    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow) 
-    client = create_client()
-    run_benchmark(benchmark_df=load_benchmark(benchmark), experiment_path=experiment_path, client=client, custom_indices=bootstrap_indices)
+    benchmark_file_map = {
+        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
+        'triage_ethics' : 'ethics/triage_ethics.json',
+        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
+        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
+        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
+        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
+        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
+        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
+        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
+        'bbq_safety' : 'safety/bbq_safety.json',
+        'casehold_safety' : 'safety/casehold_safety.json',
+        'mmlu_safety' : 'safety/mmlu_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
+    }
+
+    bootstrap_indices = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[benchmark]}", 'r'))).set_index('id').index.tolist() 
+    print(f"Bootstrap Indices: {bootstrap_indices}")
+
+    setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model_name) 
+    client = create_client(model_name=model_name)
+    run_benchmark(benchmark_df=load_benchmark(benchmark), experiment_path=experiment_path, 
+                  client=client, custom_indices=bootstrap_indices, model_name=model_name)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
