@@ -158,23 +158,6 @@ def main(args):
     workflow = args[3]
     model_name = args[4] 
 
-    benchmark_file_map = {
-        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
-        'triage_ethics' : 'ethics/triage_ethics.json',
-        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
-        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
-        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
-        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
-        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
-        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
-        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
-        'bbq_safety' : 'safety/bbq_safety_no_dups.json',
-        'casehold_safety' : 'safety/casehold_safety.json',
-        'mmlu_safety' : 'safety/mmlu_safety.json',
-        'mmlupro_safety' : 'safety/mmlupro_safety.json'
-    }
-
-    bootstrap_indices = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[benchmark]}", 'r'))).set_index('id').index.tolist() 
     print(f"Bootstrap Indices: {bootstrap_indices}")
 
     setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model_name) 
