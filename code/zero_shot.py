@@ -32,7 +32,7 @@ def load_benchmark(name):
     return benchmark_df 
 
 def create_client() -> OpenAI:
-    client = OpenAI(api_key=os.getenv('LITE_LLM_KEY'), base_url=os.getenv('LITE_LLM_BASE_URL'))
+    client = OpenAI(api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     return client 
 
 def run_query(client, input_text, log_file, model_name) -> str:
@@ -168,7 +168,7 @@ def main(args):
         'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
         'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
         'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
-        'bbq_safety' : 'safety/bbq_safety.json',
+        'bbq_safety' : 'safety/bbq_safety_no_dups.json',
         'casehold_safety' : 'safety/casehold_safety.json',
         'mmlu_safety' : 'safety/mmlu_safety.json',
         'mmlupro_safety' : 'safety/mmlupro_safety.json'
@@ -178,9 +178,10 @@ def main(args):
     print(f"Bootstrap Indices: {bootstrap_indices}")
 
     setup_experiment_directory(experiment_path, benchmark, bootstrap_indices, workflow, model_name) 
-    client = create_client(model_name=model_name)
-    run_benchmark(benchmark_df=load_benchmark(benchmark), experiment_path=experiment_path, 
+    client = create_client()
+    results_df = run_benchmark(benchmark_df=load_benchmark(benchmark), experiment_path=experiment_path, 
                   client=client, custom_indices=bootstrap_indices, model_name=model_name)
+    generate_summary(results_df=results_df, experiment_path=experiment_path)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

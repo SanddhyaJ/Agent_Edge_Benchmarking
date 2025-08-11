@@ -41,7 +41,8 @@ def justice(q, choices : list[str]) -> str:
         choices: list of answer choices
     """
 
-    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-5-2025-08-07",
+                    api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     msg = llm.invoke(f"You are an expert in justice in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -54,7 +55,8 @@ def beneficience(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
-    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-5-2025-08-07",
+                    api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     msg = llm.invoke(f"You are an expert in beneficience in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -67,7 +69,8 @@ def autonomy(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
-    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-5-2025-08-07",
+                    api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     msg = llm.invoke(f"You are an expert in autonomy in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -79,7 +82,8 @@ def non_maleficence(q, choices : list[str]) -> str:
         q: question string
         choices: list of answer choices
     """
-    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-5-2025-08-07",
+                    api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     msg = llm.invoke(f"You are an expert in non-maleficence in medical ethics. Please answer the following question and provide concise reasoning: {q}\nChoices: {choices}\n")
     return msg.content
 
@@ -87,7 +91,8 @@ def non_maleficence(q, choices : list[str]) -> str:
 def llm_call(state: MessagesState):
     """LLM decides whether to call a tool or not"""
 
-    llm = ChatOpenAI(model='gpt-4o-2024-08-06', api_key=os.getenv("EKFZ_OPENAI_API_KEY"))
+    llm = ChatOpenAI(model_name="gpt-5-2025-08-07",
+                    api_key=os.getenv('EKFZ_OPENAI_API_KEY'))
     tools = [autonomy, beneficience, justice, non_maleficence]
     llm_with_tools = llm.bind_tools(tools)
     return {
@@ -267,7 +272,7 @@ def run_benchmark(benchmark_df, experiment_path, custom_indices, model_name, age
 
     return results_df
 
-def setup_experiment_directory(experiment_path, dataset_name, custom_indices, workflow, model = 'gpt-4o-2024-08-06'):
+def setup_experiment_directory(experiment_path, dataset_name, custom_indices, workflow, model):
     if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
         sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
@@ -341,11 +346,30 @@ def load_benchmark(name):
 
 def main(args):
 
-    model_name = 'gpt-4o-2024-08-06'
+    #model_name = 'gpt-4o-2024-08-06'
     benchmark = args[0]
     custom_indices = args[1]
     experiment_path = args[2]
     workflow = args[3]
+    model_name = args[4]
+
+    benchmark_file_map = {
+        'mmlu_ethics' : 'ethics/mmlu_ethics.json',
+        'triage_ethics' : 'ethics/triage_ethics.json',
+        'truthfulqa_ethics' : 'ethics/truthfulqa_ethics.json',
+        'medbullets_metacognition' : 'metacognition/medbullets_metacognition.json',
+        'medcalc_metacognition' : 'metacognition/medcalc_metacognition.json',
+        'metamedqa_metacognition' : 'metacognition/metamedqa_metacognition.json',
+        'mmlu_metacognition' : 'metacognition/mmlu_metacognition.json',
+        'mmlu_pro_metacognition' : 'metacognition/mmlu_pro_metacognition.json',
+        'pubmedqa_metacognition' : 'metacognition/pubmedqa_metacognition.json',
+        'bbq_safety' : 'safety/bbq_safety_no_dups.json',
+        'casehold_safety' : 'safety/casehold_safety.json',
+        'mmlu_safety' : 'safety/mmlu_safety.json',
+        'mmlupro_safety' : 'safety/mmlupro_safety.json'
+    }
+
+    custom_indices = pd.DataFrame(json.load(open(f"../benchmarks/{benchmark_file_map[benchmark]}", 'r'))).set_index('id').index.tolist() 
 
     setup_experiment_directory(experiment_path=experiment_path, dataset_name=benchmark, custom_indices=custom_indices, workflow=workflow, model=model_name)
     agent = generate_workflow().compile()
