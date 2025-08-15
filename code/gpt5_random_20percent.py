@@ -61,5 +61,6 @@ if __name__ == "__main__":
     
     benchmark_df, benchmark_category = load_benchmark(args.benchmark)
     custom_indices = get_sample_indices(args.benchmark)
+    custom_indices = list(set(benchmark_df.id) - set(custom_indices))
     run_gpt5(args.benchmark, custom_indices, args.experiment_path)
 
