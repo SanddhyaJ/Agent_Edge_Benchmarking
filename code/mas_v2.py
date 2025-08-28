@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from datetime import datetime
 from io import TextIOWrapper
 from openai import OpenAI, AsyncOpenAI
-from agents import Agent, Runner, function_tool
+from agents import Agent, Runner, function_tool, MaxTurnsExceeded
 from agents import RunConfig
 import os
 from dotenv import load_dotenv
@@ -191,73 +191,80 @@ def run_benchmark(benchmark_df, experiment_path, custom_indices, agent):
     results = []
     answered_idx_counts = {}
     for idx in tqdm(custom_indices, desc=f"Running experiment {experiment_path}"):
-        row = benchmark_df.loc[idx]
-        if idx in answered_idx_counts:
-            answered_idx_counts[idx] += 1
-        else:
-            answered_idx_counts[idx] = 1
-
-        f = open(f"{experiment_path}/logs/{idx}_{str(answered_idx_counts[idx]) if answered_idx_counts[idx] > 1 else ''}.txt", "w")
         
-        question = row['question']
-        choices = row['options']
-        correct = row['target']
-        
-        choice_string = ""
-        i = 0
-        i_string = ""
-        for val in choices:
-            choice_string += f"{i}) {val}\n"
-            i_string += f", {i}"
-            i += 1
+        if not os.path.exists(f"{experiment_path}/logs/{idx}_.txt"):
 
-        prompt = (
-            f"Question: {question}\n"
-            f"Choices:\n{choice_string}\n"
-            "Please answer with only two values separated by a comma: "
-            "'ChoiceNumber, ConfidenceScore' where ChoiceNumber is the index (zero-based) of your answer "
-            f"(e.g.{i_string}) and ConfidenceScore is an integer from 1 to 5."
-        )
-        
-        result = Runner.run_sync(agent, prompt, max_turns=10)
-        output = result.final_output
-        is_valid = check_response_format(output, len(choices))
+            try: 
+                row = benchmark_df.loc[idx]
+                if idx in answered_idx_counts:
+                    answered_idx_counts[idx] += 1
+                else:
+                    answered_idx_counts[idx] = 1
 
-        save_run_log(result, f)
-        f.write("******************************\n\n")
+                f = open(f"{experiment_path}/logs/{idx}_{str(answered_idx_counts[idx]) if answered_idx_counts[idx] > 1 else ''}.txt", "w")
+                
+                question = row['question']
+                choices = row['options']
+                correct = row['target']
+                
+                choice_string = ""
+                i = 0
+                i_string = ""
+                for val in choices:
+                    choice_string += f"{i}) {val}\n"
+                    i_string += f", {i}"
+                    i += 1
 
-        num_attempts = 0
-        while not is_valid and num_attempts < 5:
-            num_attempts += 1
-            result = Runner.run_sync(agent, prompt, max_turns=10)
-            output = result.final_output
-            is_valid = check_response_format(output, len(choices))
+                prompt = (
+                    f"Question: {question}\n"
+                    f"Choices:\n{choice_string}\n"
+                    "Please answer with only two values separated by a comma: "
+                    "'ChoiceNumber, ConfidenceScore' where ChoiceNumber is the index (zero-based) of your answer "
+                    f"(e.g.{i_string}) and ConfidenceScore is an integer from 1 to 5."
+                )
 
-            save_run_log(result, f)
-            f.write("******************************\n\n")
-        
-        if is_valid:
-            answer = int(output.answer)
-            confidence = int(output.confidence)
-            f.write(f"Final Answer: {answer}, Confidence: {confidence}\n")
-        else:
-            answer = None
-            confidence = None
-            f.write(f"Final Answer: {answer}, Confidence: {confidence}\n")
+                result = Runner.run_sync(agent, prompt, max_turns=10, run_config = RunConfig(tracing_disabled=True))
+                output = result.final_output
+                is_valid = check_response_format(output, len(choices))
 
-        if answer is not None and confidence is not None:
-        
-            is_correct = int(answer == correct)
-        
-            results.append({
-                    'id': idx,
-                    'model_answer': answer,
-                    'confidence': confidence,
-                    'correct_answer': correct,
-                    'is_correct': is_correct
-                    })
-            
-        f.close()
+                save_run_log(result, f)
+                f.write("******************************\n\n")
+
+                num_attempts = 0
+                while not is_valid and num_attempts < 5:
+                    num_attempts += 1
+                    result = Runner.run_sync(agent, prompt, max_turns=10, run_config = RunConfig(tracing_disabled=True))
+                    output = result.final_output
+                    is_valid = check_response_format(output, len(choices))
+
+                    save_run_log(result, f)
+                    f.write("******************************\n\n")
+                
+                if is_valid:
+                    answer = int(output.answer)
+                    confidence = int(output.confidence)
+                    f.write(f"Final Answer: {answer}, Confidence: {confidence}\n")
+                else:
+                    answer = None
+                    confidence = None
+                    f.write(f"Final Answer: {answer}, Confidence: {confidence}\n")
+
+                if answer is not None and confidence is not None:
+                
+                    is_correct = int(answer == correct)
+                
+                    results.append({
+                            'id': idx,
+                            'model_answer': answer,
+                            'confidence': confidence,
+                            'correct_answer': correct,
+                            'is_correct': is_correct
+                            })
+                    
+                f.close()
+            except MaxTurnsExceeded as e:
+                print(f"Max Turns exceeded {idx}: {e}")
+                continue
 
     results_df = pd.DataFrame(results)
     results_df.to_csv(f'{experiment_path}/RESPONSES.csv', index=False)
@@ -267,10 +274,11 @@ def run_benchmark(benchmark_df, experiment_path, custom_indices, agent):
 def setup_experiment_directory(experiment_path, dataset_name, custom_indices, workflow, model):
     if os.path.exists(experiment_path):
         # Directory (or file) already there → error out
-        sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
+        #sys.exit(f"Error: '{experiment_path}' already exists. Aborting.")
+        print(f"WARNING: directory {experiment_path} already exists.")
     try:
-        os.makedirs(experiment_path, exist_ok=False)
-        os.makedirs(f'{experiment_path}/logs', exist_ok=False)
+        os.makedirs(experiment_path, exist_ok=True)
+        os.makedirs(f'{experiment_path}/logs', exist_ok=True)
         with open(f"{experiment_path}/INFO.txt", "w") as info_file:
             info_file.write(datetime.now().isoformat())
             info_file.write(f"\nWorkflow: {workflow}\n")
